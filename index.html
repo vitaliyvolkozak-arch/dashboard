@@ -2,148 +2,91 @@
 <html lang="uk">
 <head>
   <meta charset="UTF-8" />
-  <title>Дашборд продажів</title>
+  <title>Аксесуари — дашборд</title>
   <link rel="stylesheet" href="style.css" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Chart.js для діаграм -->
+  <script src="[cdn.jsdelivr.net](https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js)"></script>
+  <!-- PapaParse для читання CSV -->
+  <script src="[cdn.jsdelivr.net](https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js)"></script>
 </head>
 <body>
   <div class="page">
-    <!-- TOP FILTERS -->
     <header class="top-filters">
       <div class="filters-row">
         <div class="filter">
-          <label>Тимлід</label>
-          <select>
-            <option>Горбкова Андріана</option>
-          </select>
+          <label>Файл з даними</label>
+          <input type="file" id="csv-input" accept=".csv" />
         </div>
-        <div class="filter">
-          <label>Група</label>
-          <select>
-            <option>Горбкова Андріана</option>
-          </select>
-        </div>
+
         <div class="filter">
           <label>Менеджер</label>
-          <select>
-            <option>всі</option>
+          <select id="filter-manager">
+            <option value="all">Всі менеджери</option>
           </select>
         </div>
+
         <div class="filter">
           <label>Категорія</label>
-          <select>
-            <option>всі категорії</option>
+          <select id="filter-category">
+            <option value="all">Усі</option>
+            <option value="glass">Скло</option>
+            <option value="cases">Чохли</option>
+            <option value="camera">Скло на камеру</option>
           </select>
         </div>
+
         <div class="filter">
           <label>Період</label>
-          <select>
-            <option>Місяць</option>
+          <select id="filter-period">
+            <option value="month">Місяць</option>
           </select>
-        </div>
-        <div class="filter">
-          <label>Місяць</label>
-          <select>
-            <option>червень 2026</option>
-          </select>
-        </div>
-        <div class="filter">
-          <label>&nbsp;</label>
-          <button class="btn btn-primary">Завантажити з 1С</button>
-        </div>
-        <div class="filter">
-          <label>&nbsp;</label>
-          <button class="btn btn-secondary">Експорт</button>
         </div>
       </div>
+
       <div class="period-info">
-        Період: Місяць (2026‑06‑01 — 2026‑06‑30) · враховано 1 звіт(и)
+        Вкладка: <strong>Аксесуари</strong>. Завантаж CSV за потрібний місяць.
       </div>
     </header>
 
-    <!-- KPI CARDS -->
+    <!-- KPI -->
     <section class="kpi-grid">
       <div class="kpi-card">
         <div class="kpi-label">ТЕЛЕФОНИ</div>
-        <div class="kpi-value">2 992</div>
-        <div class="kpi-sub">команда: Горбкова Андріана</div>
+        <div class="kpi-value" id="kpi-phones">0</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">СКЛО (К-СТЬ)</div>
-        <div class="kpi-value">863</div>
-        <div class="kpi-sub">28.8% до телефонів</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">СКЛО (ВАЛОВИЙ ПРИБУТОК)</div>
-        <div class="kpi-value">$17 675</div>
-        <div class="kpi-sub">28.8% до телефонів</div>
+        <div class="kpi-value" id="kpi-glass-qty">0</div>
+        <div class="kpi-sub" id="kpi-glass-pen">0% до телефонів</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">ЧОХЛИ (К-СТЬ)</div>
-        <div class="kpi-value">498</div>
-        <div class="kpi-sub">16.6% до телефонів</div>
+        <div class="kpi-value" id="kpi-cases-qty">0</div>
+        <div class="kpi-sub" id="kpi-cases-pen">0% до телефонів</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">ЧОХЛИ (ПРИБУТОК)</div>
-        <div class="kpi-value">$6 020</div>
-        <div class="kpi-sub">16.6% до телефонів</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">BLACK SIDE/SLIM</div>
-        <div class="kpi-value">316</div>
-        <div class="kpi-sub">53.9% від скла</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">FULL GLASS</div>
-        <div class="kpi-value">238</div>
-        <div class="kpi-sub">40.6% від скла</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">9:42 CORNING</div>
-        <div class="kpi-value">16</div>
-        <div class="kpi-sub">2.7% від скла</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">TEMPERED GLASS</div>
-        <div class="kpi-value">16</div>
-        <div class="kpi-sub">2.7% від скла</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">СКЛО НА КАМЕРУ</div>
-        <div class="kpi-value">227</div>
-        <div class="kpi-sub">7.6% від скла</div>
+        <div class="kpi-label">СКЛО НА КАМЕРУ (К-СТЬ)</div>
+        <div class="kpi-value" id="kpi-camera-qty">0</div>
+        <div class="kpi-sub" id="kpi-camera-pen">0% до телефонів</div>
       </div>
     </section>
 
-    <!-- CHARTS -->
+    <!-- Діаграма -->
     <section class="charts-row">
       <div class="chart-card">
-        <div class="chart-title">Топ‑10 за валовим прибутком зі скла</div>
-        <div class="chart-subtitle">Скло валовий прибуток</div>
-        <!-- Плейсхолдер під графік -->
-        <div class="chart-placeholder">
-          Барчарт (тут можна підключити Chart.js)
-        </div>
-      </div>
-
-      <div class="chart-card">
-        <div class="chart-title">Розподіл % Скло до телефонів</div>
-        <div class="chart-subtitle">Кількість продавців за діапазоном проникнення</div>
-        <div class="chart-placeholder">
-          Стовпчиковий графік
-        </div>
+        <div class="chart-title">Топ‑10 менеджерів за валовим прибутком зі скла</div>
+        <div class="chart-subtitle">на основі завантажених даних</div>
+        <canvas id="topGlassChart" height="220"></canvas>
       </div>
     </section>
 
-    <!-- TABLE -->
+    <!-- Таблиця -->
     <section class="table-section">
       <div class="table-header-row">
-        <h2>Основні показники — по продавцях</h2>
+        <h2>Основні показники — по менеджерах</h2>
         <div class="table-controls">
-          <input type="text" placeholder="Пошук: менеджера..." />
-          <select>
-            <option>Сортувати: Телефони ↑</option>
-          </select>
+          <input type="text" id="search-input" placeholder="Пошук менеджера..." />
         </div>
       </div>
 
@@ -154,77 +97,22 @@
               <th>Менеджер</th>
               <th>Телефони</th>
               <th>Скло (к-сть)</th>
-              <th>Скло прибуток ($)</th>
+              <th>Скло вал. прибуток</th>
               <th>% Скло до тлф</th>
               <th>Чохли (к-сть)</th>
-              <th>Прибуток чохли ($)</th>
               <th>% Чохли до тлф</th>
-              <th>Black/Slim</th>
-              <th>% Black/Slim</th>
-              <th>Full Glass</th>
-              <th>% Full Glass</th>
-              <th>9:42 Corning</th>
-              <th>Tempered</th>
-              <th>Скло на камеру</th>
+              <th>Скло на камеру (к-сть)</th>
+              <th>% Камера до тлф</th>
             </tr>
           </thead>
-          <tbody>
-            <!-- Приклад кількох рядків, далі можна буде генерувати з CSV -->
-            <tr>
-              <td>Леськів Наталя</td>
-              <td>46</td>
-              <td>25</td>
-              <td>$404</td>
-              <td>54.3%</td>
-              <td>8</td>
-              <td>$102</td>
-              <td>17.4%</td>
-              <td>5</td>
-              <td>33.3%</td>
-              <td>10</td>
-              <td>66.7%</td>
-              <td>0</td>
-              <td>0</td>
-              <td>10</td>
-            </tr>
-            <tr>
-              <td>Гавдульський Максим</td>
-              <td>39</td>
-              <td>10</td>
-              <td>$194</td>
-              <td>25.6%</td>
-              <td>5</td>
-              <td>$67</td>
-              <td>12.8%</td>
-              <td>3</td>
-              <td>60.0%</td>
-              <td>2</td>
-              <td>40.0%</td>
-              <td>0</td>
-              <td>0</td>
-              <td>3</td>
-            </tr>
-            <tr>
-              <td>Поглод Святослав</td>
-              <td>36</td>
-              <td>7</td>
-              <td>$151</td>
-              <td>19.4%</td>
-              <td>5</td>
-              <td>$101</td>
-              <td>13.9%</td>
-              <td>4</td>
-              <td>66.7%</td>
-              <td>2</td>
-              <td>33.3%</td>
-              <td>0</td>
-              <td>0</td>
-              <td>1</td>
-            </tr>
+          <tbody id="managers-body">
+            <tr><td colspan="9">Завантаж файл CSV, щоб побачити дані</td></tr>
           </tbody>
         </table>
       </div>
     </section>
   </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
