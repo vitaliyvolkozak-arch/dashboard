@@ -1,0 +1,242 @@
+// Усі агреговані дані по менеджерах
+let managersAgg = [];
+
+const csvInput = document.getElementById("csv-input");
+const managerSelect = document.getElementById("filter-manager");
+const categorySelect = document.getElementById("filter-category");
+const searchInput = document.getElementById("search-input");
+const tableBody = document.getElementById("managers-body");
+
+// KPI елементи
+const kpiPhones = document.getElementById("kpi-phones");
+const kpiGlassQty = document.getElementById("kpi-glass-qty");
+const kpiGlassPen = document.getElementById("kpi-glass-pen");
+const kpiCasesQty = document.getElementById("kpi-cases-qty");
+const kpiCasesPen = document.getElementById("kpi-cases-pen");
+const kpiCameraQty = document.getElementById("kpi-camera-qty");
+const kpiCameraPen = document.getElementById("kpi-camera-pen");
+
+// Діаграма
+let topGlassChart;
+
+// =======================
+// 1. ЗАВАНТАЖЕННЯ CSV
+// =======================
+csvInput.addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  Papa.parse(file, {
+    header: true,
+    skipEmptyLines: true,
+    complete: (result) => {
+      managersAgg = aggregateByManager(result.data);
+      fillManagerFilter(managersAgg);
+      updateAll();
+    },
+    error: (err) => {
+      alert("Помилка читання CSV: " + err.message);
+    }
+  });
+});
+
+// =======================
+// 2. АГРЕГАЦІЯ ПО МЕНЕДЖЕРАХ
+// =======================
+function aggregateByManager(rows) {
+  const map = new Map();
+
+  rows.forEach((row) => {
+    const manager = (row["Продавець сайту"] || "").trim();
+    if (!manager || manager === "Разом") return;
+
+    const phones = toNum(row["Телефони"]);
+    const glass = toNum(row["Скло"]);
+    const glassProfit = moneyToNum(row["Скло валовий прибуток"]);
+    const cases = toNum(row["К-сть чохли"]);
+    const camera = toNum(row["К-сть скло на камеру"]);
+
+    if (!map.has(manager)) {
+      map.set(manager, {
+        manager,
+        phones: 0,
+        glass: 0,
+        glassProfit: 0,
+        cases: 0,
+        camera: 0
+      });
+    }
+
+    const agg = map.get(manager);
+    agg.phones += phones;
+    agg.glass += glass;
+    agg.glassProfit += glassProfit;
+    agg.cases += cases;
+    agg.camera += camera;
+  });
+
+  // розрахунок % проникнення
+  return Array.from(map.values()).map((r) => {
+    const p = r.phones || 1;
+    return {
+      ...r,
+      glassPen: (r.glass / p) * 100,
+      casesPen: (r.cases / p) * 100,
+      cameraPen: (r.camera / p) * 100
+    };
+  });
+}
+
+function toNum(v) {
+  if (v === null || v === undefined) return 0;
+  const n = Number(String(v).replace(",", ".").replace(/[^0-9.\-]/g, ""));
+  return isNaN(n) ? 0 : n;
+}
+
+function moneyToNum(v) {
+  if (!v) return 0;
+  const s = String(v).replace("$", "").replace(",", ".").replace(/[^0-9.\-]/g, "");
+  const n = Number(s);
+  return isNaN(n) ? 0 : n;
+}
+
+// =======================
+// 3. ФІЛЬТРИ
+// =======================
+function fillManagerFilter(data) {
+  const managers = [...new Set(data.map((r) => r.manager))].sort();
+  managerSelect.innerHTML = '<option value="all">Всі менеджери</option>';
+  managers.forEach((m) => {
+    const opt = document.createElement("option");
+    opt.value = m;
+    opt.textContent = m;
+    managerSelect.appendChild(opt);
+  });
+}
+
+managerSelect.addEventListener("change", updateAll);
+categorySelect.addEventListener("change", updateAll);
+searchInput.addEventListener("input", updateAll);
+
+// =======================
+// 4. ОНОВЛЕННЯ ВСЬОГО
+// =======================
+function updateAll() {
+  if (!managersAgg.length) {
+    tableBody.innerHTML = "<tr><td colspan='9'>Немає даних. Завантаж CSV.</td></tr>";
+    resetKpi();
+    updateChart([]);
+    return;
+  }
+
+  const selectedManager = managerSelect.value;
+  const search = (searchInput.value || "").toLowerCase();
+
+  let filtered = managersAgg.filter((r) => {
+    const byManager = selectedManager === "all" || r.manager === selectedManager;
+    const bySearch = !search || r.manager.toLowerCase().includes(search);
+    return byManager && bySearch;
+  });
+
+  // Таблиця
+  renderTable(filtered);
+
+  // KPI (по відфільтрованих)
+  updateKpi(filtered);
+
+  // Діаграма
+  updateChart(filtered);
+}
+
+function renderTable(rows) {
+  tableBody.innerHTML = "";
+  rows.forEach((r) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${r.manager}</td>
+      <td>${r.phones}</td>
+      <td>${r.glass}</td>
+      <td>$${r.glassProfit.toFixed(0)}</td>
+      <td>${r.glassPen.toFixed(1)}%</td>
+      <td>${r.cases}</td>
+      <td>${r.casesPen.toFixed(1)}%</td>
+      <td>${r.camera}</td>
+      <td>${r.cameraPen.toFixed(1)}%</td>
+    `;
+    tableBody.appendChild(tr);
+  });
+}
+
+function resetKpi() {
+  kpiPhones.textContent = "0";
+  kpiGlassQty.textContent = "0";
+  kpiGlassPen.textContent = "0% до телефонів";
+  kpiCasesQty.textContent = "0";
+  kpiCasesPen.textContent = "0% до телефонів";
+  kpiCameraQty.textContent = "0";
+  kpiCameraPen.textContent = "0% до телефонів";
+}
+
+function updateKpi(rows) {
+  const totals = rows.reduce(
+    (acc, r) => {
+      acc.phones += r.phones;
+      acc.glass += r.glass;
+      acc.cases += r.cases;
+      acc.camera += r.camera;
+      return acc;
+    },
+    { phones: 0, glass: 0, cases: 0, camera: 0 }
+  );
+
+  const p = totals.phones || 1;
+
+  kpiPhones.textContent = totals.phones;
+  kpiGlassQty.textContent = totals.glass;
+  kpiGlassPen.textContent = `${((totals.glass / p) * 100).toFixed(1)}% до телефонів`;
+  kpiCasesQty.textContent = totals.cases;
+  kpiCasesPen.textContent = `${((totals.cases / p) * 100).toFixed(1)}% до телефонів`;
+  kpiCameraQty.textContent = totals.camera;
+  kpiCameraPen.textContent = `${((totals.camera / p) * 100).toFixed(1)}% до телефонів`;
+}
+
+// =======================
+// 5. ДІАГРАМА TOP-10
+// =======================
+function updateChart(rows) {
+  const sorted = [...rows].sort((a, b) => b.glassProfit - a.glassProfit).slice(0, 10);
+
+  const labels = sorted.map((r) => r.manager);
+  const values = sorted.map((r) => r.glassProfit);
+
+  const ctx = document.getElementById("topGlassChart");
+
+  if (topGlassChart) topGlassChart.destroy();
+
+  topGlassChart = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: "Валовий прибуток зі скла, $",
+          data: values,
+          backgroundColor: "#8b5cf6"
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        x: { ticks: { font: { size: 11 } } },
+        y: { beginAtZero: true }
+      }
+    }
+  });
+}
+
+// Перший виклик (якщо ще нема даних)
+updateAll();
