@@ -27,17 +27,30 @@ fileInput.addEventListener("change", (e) => {
   const reader = new FileReader();
 
   reader.onload = (evt) => {
-    console.log("Файл прочитано в пам'ять");
-    const data = evt.target.result;
+  console.log("Файл прочитано, розмір:", evt.target.result.byteLength);
+  const data = evt.target.result;
 
-    let workbook;
-    try {
-      workbook = XLSX.read(data, { type: "array" });
-    } catch (err) {
-      console.error("Помилка XLSX.read:", err);
-      alert("Не вдалося прочитати файл Excel. Перевір формат.");
-      return;
-    }
+  try {
+    const workbook = XLSX.read(data, { type: "array" });
+    const firstSheetName = workbook.SheetNames[0];
+    console.log("Перший лист:", firstSheetName);
+
+    const sheet = workbook.Sheets[firstSheetName];
+    const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+    console.log("Рядків у листі:", rows.length);
+    console.log("Перший рядок:", rows[0]);
+
+    managersAgg = aggregateByManager(rows);
+    console.log("Після агрегації менеджерів:", managersAgg.length);
+
+    fillManagerFilter(managersAgg);
+    updateAll();
+  } catch (err) {
+    console.error("Помилка XLSX.read:", err);
+    alert("Не вдалося прочитати файл Excel. Деталі у консолі.");
+  }
+};
+
 
     const firstSheetName = workbook.SheetNames[0];
     console.log("Перший лист:", firstSheetName);
