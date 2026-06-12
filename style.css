@@ -6,7 +6,6 @@
   --text-muted: #6b7280;
   --accent: #4f46e5;
   --accent-soft: #ebe9ff;
-  --green: #10b981;
   --shadow-soft: 0 10px 30px rgba(15, 23, 42, 0.08);
   --radius-lg: 14px;
   --radius-md: 10px;
@@ -54,7 +53,7 @@ body {
 .filter {
   display: flex;
   flex-direction: column;
-  min-width: 140px;
+  min-width: 160px;
 }
 
 .filter label {
@@ -65,31 +64,13 @@ body {
   margin-bottom: 4px;
 }
 
-.filter select {
+.filter select,
+.filter input[type="file"] {
   border-radius: var(--radius-md);
   border: 1px solid var(--border-soft);
   padding: 7px 10px;
   font-size: 13px;
   background: #f9fafb;
-}
-
-.btn {
-  border: none;
-  border-radius: 999px;
-  padding: 8px 14px;
-  font-size: 13px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.btn-primary {
-  background: #2563eb;
-  color: #fff;
-}
-
-.btn-secondary {
-  background: #eef2ff;
-  color: #3730a3;
 }
 
 .period-info {
@@ -102,7 +83,7 @@ body {
 
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 12px;
   margin-bottom: 20px;
 }
@@ -139,7 +120,7 @@ body {
 
 .charts-row {
   display: grid;
-  grid-template-columns: 2fr 1.3fr;
+  grid-template-columns: 1.8fr;
   gap: 18px;
   margin-bottom: 22px;
 }
@@ -161,18 +142,6 @@ body {
   font-size: 12px;
   color: var(--text-muted);
   margin-bottom: 10px;
-}
-
-.chart-placeholder {
-  border-radius: var(--radius-md);
-  border: 1px dashed var(--border-soft);
-  background: #f9fafb;
-  height: 220px;
-  font-size: 12px;
-  color: var(--text-muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 /* TABLE */
@@ -202,8 +171,7 @@ body {
   gap: 8px;
 }
 
-.table-controls input,
-.table-controls select {
+.table-controls input[type="text"] {
   border-radius: var(--radius-md);
   border: 1px solid var(--border-soft);
   padding: 6px 9px;
@@ -269,8 +237,7 @@ tbody tr:nth-child(even) {
     width: 100%;
   }
 
-  .table-controls input,
-  .table-controls select {
+  .table-controls input[type="text"] {
     flex: 1;
   }
 }
